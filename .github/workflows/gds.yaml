@@ -34,6 +34,11 @@ jobs:
         with:
           submodules: recursive
 
+      # The tests compile RV32E programs (C + riscv-tests) at run time
+      - name: Install RISC-V toolchain
+        shell: bash
+        run: sudo apt-get update && sudo apt-get install -y gcc-riscv64-unknown-elf picolibc-riscv64-unknown-elf
+
       - name: GL test
         uses: TinyTapeout/tt-gds-action/gl_test@ttgf26c
 

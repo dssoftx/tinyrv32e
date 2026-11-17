@@ -13,6 +13,12 @@ jobs:
         shell: bash
         run: sudo apt-get update && sudo apt-get install -y iverilog
 
+      # The tests compile RV32E programs (C + riscv-tests) at run time
+      - name: Install RISC-V toolchain
+        shell: bash
+        run: sudo apt-get install -y gcc-riscv64-unknown-elf picolibc-riscv64-unknown-elf
+
+
       # Set Python up and install cocotb
       - name: Setup python
         uses: actions/setup-python@v6
