@@ -19,8 +19,8 @@ stores and one cycle per bit for shifts. The design is completely memory-bound.
 A fetch that starts a new flash read (command + address + data) takes ~130
 clocks. After a fetch the flash chip select stays low, so the next sequential
 instruction only needs its 32 data bits (~64 clocks). Straight-line code runs
-at ~95 clocks per instruction and typical C code averages ~118 (roughly 420k
-instructions per second at 50 MHz). Taken branches, jumps and data accesses
+at ~95 clocks per instruction and typical C code averages ~118 (roughly 210k
+instructions per second at 25 MHz). Taken branches, jumps and data accesses
 end the stream.
 
 Memory map:
@@ -49,7 +49,7 @@ same bus can program the flash without unplugging anything.
 2. Write `blink.bin` to offset 0 of the flash on the QSPI Pmod (while the
    design is held in reset or not selected).
 3. Plug the Pmod into the bidirectional header, select the design, set the clock
-   to 50 MHz and release reset.
+   to 25 MHz and release reset.
 4. The blink example runs a scanner across `uo_out`; `ui_in` sets the speed.
 
 ## External hardware

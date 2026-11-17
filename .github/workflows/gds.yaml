@@ -18,6 +18,19 @@ jobs:
         with:
           pdk: gf180mcuD
 
+      # Print the timing summary and the worst setup paths into the job log
+      - name: Timing report
+        if: always()
+        shell: bash
+        run: |
+          for d in $(find runs/wokwi -maxdepth 1 -type d -name '*stapostpnr*' | sort | tail -1); do
+            find "$d" -name 'summary.rpt' -exec sh -c 'echo "== $1"; cat "$1"' _ {} \;
+            for c in nom_tt_025C_3v30 nom_ss_125C_3v00; do
+              f=$(find "$d/$c" -name 'max.rpt' 2>/dev/null | head -1)
+              [ -n "$f" ] && { echo "== $f"; head -n 120 "$f"; }
+            done
+          done
+
   precheck:
     needs: gds
     runs-on: ubuntu-24.04

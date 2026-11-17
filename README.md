@@ -20,7 +20,7 @@ uo_out[7:0] │◄── GPIO out  │ 15x32 regs,  │            │ mode 0,  
 | ISA | RV32E (all 37 base instructions; FENCE/ECALL/EBREAK/CSR = NOP) |
 | Memory | 16 MB SPI flash at `0x0000_0000`, 16 MB window of SPI PSRAM at `0x0100_0000` |
 | I/O | `0x8000_0000` GPIO out, `0x8000_0004` GPIO in |
-| Speed | ~95 clocks for straight-line instructions, ~118 on average for real C code (SPI-bound): ~420k instr/s at 50 MHz |
+| Speed | ~95 clocks for straight-line instructions, ~118 on average for real C code (SPI-bound): ~210k instr/s at the 25 MHz timing target |
 | Area | ~108k µm² of GF180 7-track 3.3 V cells, 661 flip-flops → 2x2 tiles (~47% of the slot) |
 | Toolchain | stock `riscv64-unknown-elf-gcc -march=rv32e -mabi=ilp32e` + libgcc |
 
