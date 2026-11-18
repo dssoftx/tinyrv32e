@@ -61,7 +61,15 @@ module tb ();
   spi_dev #(.WRITABLE(0)) flash (.cs_n(cs_flash_n), .sck(sck), .mosi(mosi), .miso(miso_flash));
   spi_dev #(.WRITABLE(1)) ram   (.cs_n(cs_ram_n),   .sck(sck), .mosi(mosi), .miso(miso_ram));
 
-  wire halted = flash.halted | ram.halted;
+  // Programs halt by spinning on `j .` in flash. (The PSRAM model's
+  // detector would also fire on four identical word loads in a row.)
+  wire halted = flash.halted;
+
+  // Exact clock count from reset release to halt, for performance numbers.
+  reg [31:0] cycle_count;
+  always @(posedge clk)
+    if (!rst_n)       cycle_count <= 32'd0;
+    else if (!halted) cycle_count <= cycle_count + 32'd1;
 
   // ---------------------------------------------------------------------
   // Program loading and trace

@@ -18,8 +18,8 @@ Every instruction goes through FETCH → RS1 → RS2 → EXEC, plus MEM for load
 stores and one cycle per bit for shifts. The design is completely memory-bound.
 A fetch that starts a new flash read (command + address + data) takes ~130
 clocks. After a fetch the flash chip select stays low, so the next sequential
-instruction only needs its 32 data bits (~64 clocks). Straight-line code runs
-at ~95 clocks per instruction and typical C code averages ~118 (roughly 210k
+instruction only needs its 32 data bits (~64 clocks). Straight-line ALU code runs
+at 69 clocks per instruction and typical C code averages ~118 (roughly 210k
 instructions per second at 25 MHz). Taken branches, jumps and data accesses
 end the stream.
 

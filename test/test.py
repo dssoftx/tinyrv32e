@@ -85,6 +85,7 @@ async def run_program(dut, flash: bytes, name: str, ui_in=0):
         cycles += step
         assert cycles < max_cycles, f"{name}: design did not halt within {max_cycles} cycles"
 
+    cycles = int(dut.cycle_count.value)   # exact, rather than the poll granularity
     dut.flush.value = 1
     await Timer(1, unit="ns")
     dut.flush.value = 0
@@ -116,7 +117,7 @@ async def run_program(dut, flash: bytes, name: str, ui_in=0):
                 break
 
     assert not errors, f"{name}:\n  " + "\n  ".join(errors)
-    dut._log.info(f"{name}: OK  {iss.steps} instr, ~{cycles} cycles "
+    dut._log.info(f"{name}: OK  {iss.steps} instr, {cycles} cycles "
                   f"(~{cycles / max(iss.steps, 1):.0f} cycles/instr)")
     return iss, cycles
 
