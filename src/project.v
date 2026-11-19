@@ -79,6 +79,7 @@ module tt_um_dssoftx_tinyrv32e (
   // SPI memory
   // ---------------------------------------------------------------------
   wire        spi_busy, spi_done;
+  wire        cs_ramb_n;
   wire [31:0] spi_rdata;
   wire        cs_flash_n, cs_ram_n, sck, mosi;
 
@@ -100,6 +101,7 @@ module tt_um_dssoftx_tinyrv32e (
       .rdata         (spi_rdata),
       .spi_cs_flash_n(cs_flash_n),
       .spi_cs_ram_n  (cs_ram_n),
+      .spi_cs_ramb_n (cs_ramb_n),
       .spi_sck       (sck),
       .spi_mosi      (mosi),
       .spi_miso      (uio_in[2])
@@ -112,7 +114,7 @@ module tt_um_dssoftx_tinyrv32e (
   // Pins
   // ---------------------------------------------------------------------
   assign uo_out  = gpio_out;
-  assign uio_out = {1'b1, cs_ram_n, 1'b1, 1'b1, sck, 1'b0, mosi, cs_flash_n};
+  assign uio_out = {cs_ramb_n, cs_ram_n, 1'b1, 1'b1, sck, 1'b0, mosi, cs_flash_n};
   assign uio_oe  = rst_n ? 8'b1111_1011 : 8'b0000_0000;
 
   wire _unused = &{ena, uio_in[7:3], uio_in[1:0], mem_addr[30:25], 1'b0};

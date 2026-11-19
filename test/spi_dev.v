@@ -10,6 +10,11 @@
  * from the outside. (Longer bursts are streamed straight-line code, e.g.
  * a loop body, and must not count.) This works for
  * RTL and gate-level simulation alike.
+ *
+ * NEEDS_RESET (PSRAM, APS6404): like the real part, the model must receive
+ * Reset-Enable (66h) immediately followed by Reset (99h), no earlier than
+ * POWERUP_NS after power-up (the last `clear`), before any read or write.
+ * Violations count as protocol errors.
  */
 
 `default_nettype none
@@ -19,7 +24,10 @@ module spi_dev #(
     parameter WRITABLE     = 0,
     parameter AW           = 18,
     parameter HALT_REPEATS = 4,
-    parameter real MIN_CS_HIGH = 30.0
+    parameter real MIN_CS_HIGH = 30.0,
+    parameter NEEDS_RESET  = 0,
+    parameter real POWERUP_NS = 150000.0,
+    parameter real TRST_NS    = 50.0
 ) (
     input  wire cs_n,
     input  wire sck,
@@ -38,9 +46,19 @@ module spi_dev #(
   integer    repeats;
   reg        halted;
 
+  // PSRAM initialization state
+  reg      reset_en;   // 66h received, waiting for 99h
+  reg      ready;      // initialized by 66h + 99h
+  realtime t_powerup;
+  realtime t_reset;
+
   integer i;
   task clear;
     begin
+      reset_en  = 1'b0;
+      ready     = 1'b0;
+      t_powerup = $realtime;
+      t_reset   = -1000.0;
       for (i = 0; i < (1 << AW); i = i + 1) mem[i] = 8'h00;
       repeats   = 0;
       last_addr = 24'hFFFFFF;
@@ -69,6 +87,11 @@ module spi_dev #(
       protocol_errors = protocol_errors + 1;
       $display("SPI protocol error at %0t: CS fell with SCK high", $realtime);
     end
+    if (NEEDS_RESET && ready && ($realtime - t_reset < TRST_NS)) begin
+      protocol_errors = protocol_errors + 1;
+      $display("SPI protocol error at %0t: command %0.1f ns after reset (tRST)",
+               $realtime, $realtime - t_reset);
+    end
     if ($realtime - t_cs_rise < MIN_CS_HIGH) begin
       protocol_errors = protocol_errors + 1;
       $display("SPI protocol error at %0t: CS high for only %0.1f ns",
@@ -81,6 +104,27 @@ module spi_dev #(
     if (sck !== 1'b0) begin
       protocol_errors = protocol_errors + 1;
       $display("SPI protocol error at %0t: CS rose with SCK high", $realtime);
+    end
+    if (NEEDS_RESET) begin
+      if (bitcnt == 8 && cmd == 8'h66) begin
+        reset_en = 1'b1;
+      end else if (bitcnt == 8 && cmd == 8'h99 && reset_en) begin
+        reset_en = 1'b0;
+        ready    = 1'b1;
+        t_reset  = $realtime;
+        if ($realtime - t_powerup < POWERUP_NS) begin
+          protocol_errors = protocol_errors + 1;
+          $display("SPI protocol error at %0t: PSRAM reset only %0.1f us after power-up",
+                   $realtime, ($realtime - t_powerup) / 1000.0);
+        end
+      end else begin
+        reset_en = 1'b0;
+        if (bitcnt >= 32 && !ready) begin
+          protocol_errors = protocol_errors + 1;
+          $display("SPI protocol error at %0t: PSRAM command %02h before 66h/99h reset",
+                   $realtime, cmd);
+        end
+      end
     end
     if (bitcnt == 64 && cmd == 8'h03) begin
       if (addr == last_addr) repeats = repeats + 1;

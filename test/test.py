@@ -32,6 +32,10 @@ def _write_hex(path, data: bytes):
     path.write_text("\n".join(f"{b:02x}" for b in data) + "\n" if data else "00\n")
 
 
+def _protocol_errors(dut):
+    return sum(int(m.protocol_errors.value) for m in (dut.flash, dut.ram, dut.ram_b))
+
+
 async def _load_and_reset(dut, flash: bytes, ui_in: int):
     dut.ena.value = 1
     dut.ui_in.value = ui_in
@@ -75,7 +79,7 @@ async def run_program(dut, flash: bytes, name: str, ui_in=0):
 
     cocotb.start_soon(Clock(dut.clk, CLK_NS, unit="ns").start())
     await _load_and_reset(dut, flash, ui_in)
-    perr0 = int(dut.flash.protocol_errors.value) + int(dut.ram.protocol_errors.value)
+    perr0 = _protocol_errors(dut)
 
     # Poll with a plain timer: ClockCycles costs a Python callback per clock.
     cycles = 0
@@ -92,9 +96,12 @@ async def run_program(dut, flash: bytes, name: str, ui_in=0):
 
     errors = []
 
-    perr = int(dut.flash.protocol_errors.value) + int(dut.ram.protocol_errors.value) - perr0
+    perr = _protocol_errors(dut) - perr0
     if perr:
         errors.append(f"{perr} SPI protocol errors (see log)")
+    for m in (dut.ram, dut.ram_b):
+        if not int(m.ready.value):
+            errors.append(f"{m._name}: PSRAM never received the 66h/99h reset")
 
     gpio = int(dut.uo_out.value)
     if gpio != iss.gpio_out:

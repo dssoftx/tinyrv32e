@@ -52,7 +52,7 @@ pinout:
   uio[4]: "SD2 (held high)"
   uio[5]: "SD3 (held high)"
   uio[6]: "PSRAM CS (RAM A)"
-  uio[7]: "RAM B CS (held high)"
+  uio[7]: "RAM B CS (power-up reset only)"
 
 # Do not change!
 yaml_version: 6

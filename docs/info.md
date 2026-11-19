@@ -49,13 +49,15 @@ same bus can program the flash without unplugging anything.
 2. Write `blink.bin` to offset 0 of the flash on the QSPI Pmod (while the
    design is held in reset or not selected).
 3. Plug the Pmod into the bidirectional header, select the design, set the clock
-   to 25 MHz and release reset.
+   to 25 MHz and release reset. The first ~8200 clocks after reset are the
+   PSRAM power-up wait and reset sequence; the CPU starts after that.
 4. The blink example runs a scanner across `uo_out`; `ui_in` sets the speed.
 
 ## External hardware
 
 Tiny Tapeout QSPI Pmod (SPI flash on CS0 / `uio[0]`, PSRAM on CS1 / `uio[6]`)
-in the bidirectional Pmod header.
+in the bidirectional Pmod header. The second PSRAM (CS2 / `uio[7]`) is not
+used, but receives the same power-up reset as the first.
 
 The flash chip select stays low between sequential instruction fetches; this is
 fine for SPI NOR flash. Keep the clock at 20 MHz or above when using the PSRAM: a 4-byte access holds

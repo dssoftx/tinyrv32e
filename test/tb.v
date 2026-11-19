@@ -53,13 +53,17 @@ module tb ();
   wire mosi       = uio_oe[1] ? uio_out[1] : 1'b1;
   wire sck        = uio_oe[3] ? uio_out[3] : 1'b0;
   wire cs_ram_n   = uio_oe[6] ? uio_out[6] : 1'b1;
+  wire cs_ramb_n  = uio_oe[7] ? uio_out[7] : 1'b1;
   wire miso_flash, miso_ram;
   wire miso       = !cs_flash_n ? miso_flash : (!cs_ram_n ? miso_ram : 1'b1);
 
   assign uio_in = {uio_out[7:3], miso, uio_out[1:0]};
 
   spi_dev #(.WRITABLE(0)) flash (.cs_n(cs_flash_n), .sck(sck), .mosi(mosi), .miso(miso_flash));
-  spi_dev #(.WRITABLE(1)) ram   (.cs_n(cs_ram_n),   .sck(sck), .mosi(mosi), .miso(miso_ram));
+  spi_dev #(.WRITABLE(1), .NEEDS_RESET(1)) ram   (.cs_n(cs_ram_n),  .sck(sck), .mosi(mosi), .miso(miso_ram));
+  // Second PSRAM (RAM B): only ever receives the power-up reset.
+  wire miso_ramb;
+  spi_dev #(.WRITABLE(1), .NEEDS_RESET(1)) ram_b (.cs_n(cs_ramb_n), .sck(sck), .mosi(mosi), .miso(miso_ramb));
 
   // Programs halt by spinning on `j .` in flash. (The PSRAM model's
   // detector would also fire on four identical word loads in a row.)
@@ -81,6 +85,7 @@ module tb ();
   always @(posedge reload) begin
     flash.clear;
     ram.clear;
+    ram_b.clear;
     $readmemh("flash.hex", flash.mem);
     $readmemh("ram.hex", ram.mem);
 `ifndef GL_TEST

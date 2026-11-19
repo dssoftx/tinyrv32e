@@ -21,7 +21,7 @@ uo_out[7:0] │◄── GPIO out  │ 15x32 regs,  │            │ mode 0,  
 | Memory | 16 MB SPI flash at `0x0000_0000`, 16 MB window of SPI PSRAM at `0x0100_0000` |
 | I/O | `0x8000_0000` GPIO out, `0x8000_0004` GPIO in |
 | Speed | 69 clocks per straight-line ALU instruction, ~118 on average for real C code (SPI-bound): ~210k instr/s at the 25 MHz timing target |
-| Area | ~108k µm² of GF180 7-track 3.3 V cells, 661 flip-flops → 2x2 tiles (~47% of the slot) |
+| Area | ~111k µm² of GF180 7-track 3.3 V cells, 679 flip-flops → 2x2 tiles (~48% of the slot) |
 | Toolchain | stock `riscv64-unknown-elf-gcc -march=rv32e -mabi=ilp32e` + libgcc |
 
 Details for the datasheet are in [docs/info.md](docs/info.md).
@@ -104,6 +104,12 @@ riscv64-unknown-elf-objcopy -O binary main.elf main.bin   # write to flash offse
   Taken branches, jumps, and any PSRAM or flash data access end the stream;
   CS then goes high for 2 clocks before the next transaction. The flash
   therefore sees one long read for each straight-line run of code.
+* **PSRAM power-up**: the APS6404 needs ≥ 150 µs after power-up and then a
+  Reset-Enable (66h) + Reset (99h) before its first access. After `rst_n`
+  the controller waits 8192 clocks (164 µs at 50 MHz, 328 µs at 25 MHz),
+  then sends 66h and 99h to both PSRAMs (CS1 and CS2 together) before the
+  first instruction fetch. The PSRAM test model rejects any access before
+  this sequence.
 * **PSRAM chip-select time**: an access holds CS low for 128 clocks. Keep the
   clock ≥ 20 MHz so it stays within the PSRAM's maximum CS-low time. (The
   PSRAM never streams; only the flash, which has no CS-low limit.)
